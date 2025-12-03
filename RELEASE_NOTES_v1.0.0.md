@@ -37,7 +37,7 @@ sudo mv cpkg-linux-amd64 /usr/local/bin/cpkg
 
 - **Git submodule-based dependency management**: Dependencies are managed as git submodules for clean, reviewable changes
 - **Semantic versioning support**: Use semver constraints (e.g., `^1.0.0`, `~2.1.0`) to specify dependency versions
-- **Lockfile for reproducible builds**: `cpkg.lock.yaml` pins exact versions, commits, and checksums
+- **Lockfile for reproducible builds**: `lock.cpkg.yaml` pins exact versions, commits, and checksums
 - **Multi-module support**: Use multiple independently versioned modules from the same repository
 - **Incremental adoption**: Use arbitrary subdirectories from any repository without upstream changes
 - **Version flexibility**: Different subdirectories can use different versions from the same repository
@@ -105,4 +105,5 @@ To report security vulnerabilities, please email [security@kelemen.com](mailto:s
 - **Repository**: https://github.com/SCKelemen/cpkg
 - **Issues**: https://github.com/SCKelemen/cpkg/issues
 - **Documentation**: See [README.md](README.md) and [docs/](docs/) directory
+
 

@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const LockfileName = "cpkg.lock.yaml"
+const LockfileName = "lock.cpkg.yaml"
 
 type Lockfile struct {
 	APIVersion   string                `yaml:"apiVersion"`

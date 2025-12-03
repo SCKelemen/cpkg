@@ -20,7 +20,7 @@ cpkg vendor [--symlink|--copy]
 ```
 project/
 ├── cpkg.yaml
-├── cpkg.lock.yaml
+├── lock.cpkg.yaml
 └── third_party/
     └── cpkg/
         └── github.com/
@@ -39,7 +39,7 @@ project/
 ```
 project/
 ├── cpkg.yaml
-├── cpkg.lock.yaml
+├── lock.cpkg.yaml
 ├── third_party/
 │   └── cpkg/
 │       └── github.com/
@@ -61,7 +61,7 @@ project/
 
 ## How It Works
 
-1. **Read lockfile**: `cpkg vendor` reads `cpkg.lock.yaml` to find all dependencies
+1. **Read lockfile**: `cpkg vendor` reads `lock.cpkg.yaml` to find all dependencies
 2. **Get source paths**: For each dependency, it uses the `sourcePath` field from the lockfile
 3. **Create vendor structure**: Creates the directory structure `vendor/<module-path>/`
 4. **Link or copy**: Either symlinks or copies files from the submodule to the vendor directory
@@ -177,4 +177,5 @@ make build
 ```
 
 The vendor directory provides a clean, flat structure that build systems can easily consume, while the submodules remain the source of truth for version control.
+
 

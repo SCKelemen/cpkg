@@ -32,3 +32,4 @@ func TestInferModulePath(t *testing.T) {
 	t.Skip("requires git repository")
 }
 
+

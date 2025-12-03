@@ -4,7 +4,9 @@
 
 cpkg supports multiple independently versioned modules/packages from the same git repository. This enables monorepo-style organization where related components can be versioned and imported separately.
 
-**Important Limitation**: cpkg currently supports only a single `cpkg.yaml` manifest file per repository (at the root). Unlike Go's `go.mod`, cpkg does not support multiple manifest files in subdirectories. All modules from the same repository share the same manifest and lockfile. This limitation may be addressed in future releases to enable true monorepo-style multi-module support with separate dependency management per subdirectory.
+**Module Discovery**: cpkg uses Go-style module discovery. When you run `cpkg` commands, it automatically finds the nearest `cpkg.yaml` by walking up the directory tree from your current working directory. This means you can have multiple `cpkg.yaml` files in subdirectories, each treated as an independent module with its own `lock.cpkg.yaml` and dependency graph. Commands operate on only one module at a time (the one whose manifest is found).
+
+**Note**: Unlike Go's workspace mode, cpkg does not support operating on multiple modules simultaneously in a single command invocation. Each module is completely independent.
 
 ## Use Cases
 
@@ -155,7 +157,7 @@ dependencies:
     version: "^1.0.0"
 ```
 
-### cpkg.lock.yaml
+### lock.cpkg.yaml
 
 ```yaml
 dependencies:
@@ -180,7 +182,7 @@ dependencies:
 ```
 project/
 ├── cpkg.yaml
-├── cpkg.lock.yaml
+├── lock.cpkg.yaml
 └── third_party/
     └── cpkg/
         └── github.com/
@@ -198,7 +200,7 @@ project/
 
 ## Lockfile Semantics
 
-**cpkg.lock.yaml** combines the roles of **go.mod** and **go.sum**:
+**lock.cpkg.yaml** combines the roles of **go.mod** and **go.sum**:
 
 - **Version locking**: Pins exact versions and commits (like `go.mod`)
 - **Integrity checking**: Includes checksums to verify dependency integrity (like `go.sum`)

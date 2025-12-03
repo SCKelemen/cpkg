@@ -49,3 +49,4 @@ func IsGitRepo(dir string) bool {
 	return err == nil || filepath.IsAbs(gitDir)
 }
 
+

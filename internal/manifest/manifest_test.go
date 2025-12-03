@@ -125,3 +125,54 @@ func TestFindManifestInParent(t *testing.T) {
 	}
 }
 
+func TestFindManifestNestedModule(t *testing.T) {
+	tmpDir := t.TempDir()
+	
+	// Create root manifest
+	rootManifestPath := filepath.Join(tmpDir, ManifestFileName)
+	rootM := &Manifest{
+		APIVersion: "cpkg.ringil.dev/v0",
+		Kind:       "Module",
+		Module:     "test/root",
+	}
+	if err := Save(rootM, rootManifestPath); err != nil {
+		t.Fatalf("failed to save root manifest: %v", err)
+	}
+
+	// Create nested subdirectory with its own manifest
+	subDir := filepath.Join(tmpDir, "subdir", "nested")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create nested subdir: %v", err)
+	}
+
+	nestedManifestPath := filepath.Join(filepath.Dir(subDir), ManifestFileName)
+	nestedM := &Manifest{
+		APIVersion: "cpkg.ringil.dev/v0",
+		Kind:       "Module",
+		Module:     "test/nested",
+	}
+	if err := Save(nestedM, nestedManifestPath); err != nil {
+		t.Fatalf("failed to save nested manifest: %v", err)
+	}
+
+	// Should find the nearest manifest (nested one), not the root one
+	found, err := FindManifest(subDir)
+	if err != nil {
+		t.Fatalf("failed to find manifest: %v", err)
+	}
+	if found != nestedManifestPath {
+		t.Errorf("expected nested manifest %s, got %s", nestedManifestPath, found)
+	}
+
+	// From a directory between root and nested, should find nested (nearest)
+	betweenDir := filepath.Join(tmpDir, "subdir")
+	found, err = FindManifest(betweenDir)
+	if err != nil {
+		t.Fatalf("failed to find manifest: %v", err)
+	}
+	if found != nestedManifestPath {
+		t.Errorf("expected nested manifest %s, got %s", nestedManifestPath, found)
+	}
+}
+
+

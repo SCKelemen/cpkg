@@ -41,7 +41,7 @@ dependencies:
 ```
 project/
 ├── cpkg.yaml
-├── cpkg.lock.yaml
+├── lock.cpkg.yaml
 └── third_party/
     └── cpkg/
         └── github.com/
@@ -114,4 +114,5 @@ Checkout only needed paths from a submodule.
 ## Conclusion
 
 The current approach (separate submodules) is the most straightforward and reliable solution. It provides clear separation, works with standard git tools, and ensures each module can be independently versioned.
+
 

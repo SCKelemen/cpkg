@@ -58,11 +58,33 @@ cpkg add github.com/user/repo/intrusive_list@^1.0.0
 cpkg add github.com/user/repo/span@^1.0.0
 ```
 
-### Multi-Module Support
+### Module Discovery
+
+cpkg uses **Go-style module discovery**: when you run `cpkg` commands, it automatically finds the nearest `cpkg.yaml` by walking up the directory tree from your current working directory. This enables:
+
+- **Multiple modules per repository**: You can have multiple `cpkg.yaml` files in subdirectories, each treated as an independent module
+- **Independent dependency management**: Each module has its own `lock.cpkg.yaml` and dependency graph
+- **Flexible project structure**: Run `cpkg` commands from any subdirectory and it will find the correct module
+
+**Example structure:**
+```
+my-repo/
+├── cpkg.yaml              # Root module
+├── lock.cpkg.yaml
+├── libs/
+│   ├── span/
+│   │   ├── cpkg.yaml      # Nested module
+│   │   └── lock.cpkg.yaml
+│   └── view/
+│       ├── cpkg.yaml      # Another nested module
+│       └── lock.cpkg.yaml
+```
+
+**Note**: Unlike Go's workspace mode, cpkg commands operate on only one module at a time (the one whose manifest is found). There is no workspace abstraction that manages multiple modules simultaneously.
+
+## Multi-Module Support
 
 cpkg supports multiple modules from the same repository, with two modes:
-
-**Note**: cpkg currently supports only a single `cpkg.yaml` manifest file per repository (at the root). Unlike Go's `go.mod`, cpkg does not support multiple manifest files in subdirectories. This may be improved in future releases.
 
 #### 1. Versioned Submodules (For Repos You Control)
 
@@ -262,7 +284,7 @@ You can customize the PR title, body, and branch name:
 
 ## Lockfile
 
-The `cpkg.lock.yaml` file is similar to **Go's `go.mod` + `go.sum` combined**:
+The `lock.cpkg.yaml` file is similar to **Go's `go.mod` + `go.sum` combined**:
 - **Version locking**: Pins exact versions and commits (like `go.mod`)
 - **Integrity checking**: Includes checksums to verify dependency integrity (like `go.sum`)
 - **Subdirectory tracking**: For multi-module repos, includes a `subdir` field indicating where source files are located
@@ -299,7 +321,7 @@ dependencies:
 
 Your build system should:
 
-1. Read `cpkg.lock.yaml`
+1. Read `lock.cpkg.yaml`
 2. Use the `sourcePath` field directly (no computation needed)
 3. Add include paths and compile
 
