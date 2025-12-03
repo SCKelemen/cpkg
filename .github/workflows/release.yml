@@ -44,6 +44,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -51,11 +53,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: cpkg-*
+          merge-multiple: false
+      
+      - name: List downloaded artifacts
+        run: |
+          echo "Artifacts directory contents:"
+          ls -la artifacts/ || echo "artifacts directory not found"
+          find . -name "cpkg*" -type f || echo "No cpkg files found"
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/*
+          files: artifacts/**/*
           draft: false
           prerelease: false
           generate_release_notes: true
