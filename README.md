@@ -331,6 +331,13 @@ See [cpkg.md](./cpkg.md) for the full specification.
 
 See [MULTI_MODULE_DESIGN.md](./MULTI_MODULE_DESIGN.md) for details on multi-module support.
 
+## Documentation
+
+- [Build System Integration](docs/build-system-integration.md) - How to integrate cpkg with your build system
+- [Multi-Module Support](docs/multi-module-design.md) - Using multiple modules from the same repository
+- [Multiple Commits](docs/multi-module-commits.md) - How cpkg handles different commits for modules from the same repo
+- [Vendor Directory](docs/vendor-explanation.md) - Understanding the vendor command and directory structure
+
 ## License
 
 MIT
