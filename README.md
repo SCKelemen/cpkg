@@ -17,7 +17,10 @@ cpkg is a minimal, Go-implemented module and dependency manager for C (and SKC f
 ## Installation
 
 ```bash
+# Install from source (recommended)
 go install github.com/SCKelemen/cpkg@latest
+
+# Or download a pre-built binary from the [Releases](https://github.com/SCKelemen/cpkg/releases) page
 ```
 
 ## Quick Start
