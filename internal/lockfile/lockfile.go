@@ -22,13 +22,14 @@ type Lockfile struct {
 }
 
 type Dependency struct {
-	Version string `yaml:"version"`
-	Commit  string `yaml:"commit"`
-	Sum     string `yaml:"sum"`
-	VCS     string `yaml:"vcs"`
-	RepoURL string `yaml:"repoURL"`
-	Path    string `yaml:"path"`
-	Subdir  string `yaml:"subdir,omitempty"` // Subdirectory within the repo (e.g., "intrusive_list", "span")
+	Version    string `yaml:"version"`
+	Commit     string `yaml:"commit"`
+	Sum        string `yaml:"sum"`
+	VCS        string `yaml:"vcs"`
+	RepoURL    string `yaml:"repoURL"`
+	Path       string `yaml:"path"`             // Submodule path (entire repo checkout)
+	Subdir     string `yaml:"subdir,omitempty"` // Subdirectory within the repo (e.g., "intrusive_list", "span")
+	SourcePath string `yaml:"sourcePath"`       // Actual path to source files (path + subdir if subdir exists)
 }
 
 func FindLockfile(startDir string) (string, error) {

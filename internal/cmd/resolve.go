@@ -79,15 +79,22 @@ func resolveDependencies(m *manifest.Manifest, depRoot string) (*lockfile.Lockfi
 		}
 
 		path := filepath.Join(depRoot, modulePath)
+		
+		// Compute the actual source path (where the .c/.h files are)
+		sourcePath := path
+		if mp.Subpath != "" {
+			sourcePath = filepath.Join(path, mp.Subpath)
+		}
 
 		lockDep := lockfile.Dependency{
-			Version: selectedVersion, // Store the version part (without subpath)
-			Commit:  commit,
-			Sum:     sum,
-			VCS:     "git",
-			RepoURL: repoURL,
-			Path:    path,
-			Subdir:  mp.Subpath, // Store the subdirectory within the repo
+			Version:    selectedVersion, // Store the version part (without subpath)
+			Commit:     commit,
+			Sum:        sum,
+			VCS:        "git",
+			RepoURL:    repoURL,
+			Path:       path,        // Submodule path (entire repo checkout)
+			Subdir:     mp.Subpath,  // Store the subdirectory within the repo
+			SourcePath: sourcePath,  // Actual path to source files
 		}
 
 		lock.Dependencies[modulePath] = lockDep

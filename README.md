@@ -242,15 +242,20 @@ cpkg manages dependencies and provides source files, but **does not control the 
 
 ### Finding Source Files
 
-For modules with subpaths (multi-module repos), the source files are in a subdirectory:
+The lockfile includes a `sourcePath` field that points directly to where the source files are:
 
-- **Submodule path**: `third_party/cpkg/github.com/user/repo/intrusive_list` (entire repo checkout)
-- **Source files**: `third_party/cpkg/github.com/user/repo/intrusive_list/intrusive_list/` (actual `.h`/`.c` files)
+```yaml
+dependencies:
+  github.com/user/repo/intrusive_list:
+    path: third_party/cpkg/github.com/user/repo/intrusive_list  # Submodule path
+    subdir: intrusive_list  # Subdirectory within repo
+    sourcePath: third_party/cpkg/github.com/user/repo/intrusive_list/intrusive_list  # ← Use this!
+```
 
-The lockfile's `subdir` field tells you where the files are. Your build system should:
+Your build system should:
 
 1. Read `cpkg.lock.yaml`
-2. Use the `path` + `subdir` to locate source files
+2. Use the `sourcePath` field directly (no computation needed)
 3. Add include paths and compile
 
 ### Using `cpkg vendor`

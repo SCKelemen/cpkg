@@ -87,15 +87,10 @@ func runVendor(ctx *clix.Context) error {
 
 	count := 0
 	for modulePath, dep := range lock.Dependencies {
-		sourcePath := dep.Path
+		// Use SourcePath from lockfile (already computed as path + subdir)
+		sourcePath := dep.SourcePath
 		if !filepath.IsAbs(sourcePath) {
 			sourcePath = filepath.Join(projectRoot, sourcePath)
-		}
-
-		// If there's a subdir, the actual source files are in that subdirectory
-		// within the submodule checkout
-		if dep.Subdir != "" {
-			sourcePath = filepath.Join(sourcePath, dep.Subdir)
 		}
 
 		// Check if source exists
@@ -118,24 +113,36 @@ func runVendor(ctx *clix.Context) error {
 			}
 		}
 
+		// Get relative paths for display
+		relSource, _ := filepath.Rel(projectRoot, sourcePath)
+		relDest, _ := filepath.Rel(projectRoot, destPath)
+		if relSource == "" {
+			relSource = sourcePath
+		}
+		if relDest == "" {
+			relDest = destPath
+		}
+
 		if useSymlink {
 			// Create symlink
 			// Use relative path for portability
-			relSource, err := filepath.Rel(filepath.Dir(destPath), sourcePath)
+			linkTarget, err := filepath.Rel(filepath.Dir(destPath), sourcePath)
 			if err != nil {
 				// Fallback to absolute if relative fails
-				relSource = sourcePath
+				linkTarget = sourcePath
 			}
-			if err := os.Symlink(relSource, destPath); err != nil {
+			if err := os.Symlink(linkTarget, destPath); err != nil {
 				return fmt.Errorf("failed to create symlink for %s: %w", modulePath, err)
 			}
 			fmt.Fprintf(ctx.App.Out, "Symlinked %s @ %s\n", modulePath, dep.Version)
+			fmt.Fprintf(ctx.App.Out, "  %s -> %s\n", relDest, relSource)
 		} else {
 			// Copy directory (simplified - in production you might want to use a proper copy library)
 			if err := copyDir(sourcePath, destPath); err != nil {
 				return fmt.Errorf("failed to copy %s: %w", modulePath, err)
 			}
 			fmt.Fprintf(ctx.App.Out, "Vendored %s @ %s\n", modulePath, dep.Version)
+			fmt.Fprintf(ctx.App.Out, "  %s <- %s\n", relDest, relSource)
 		}
 
 		count++

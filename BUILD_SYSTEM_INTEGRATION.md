@@ -42,15 +42,16 @@ dependencies:
     version: v1.0.0
     commit: abc123...
     repoURL: https://github.com/user/repo.git
-    path: third_party/cpkg/github.com/user/repo/intrusive_list
-    subdir: intrusive_list  # ← This tells you where the files are
+    path: third_party/cpkg/github.com/user/repo/intrusive_list  # Submodule path
+    subdir: intrusive_list  # Subdirectory within the repo
+    sourcePath: third_party/cpkg/github.com/user/repo/intrusive_list/intrusive_list  # ← Actual source files location
 ```
 
 ## How Your Build System Finds Files
 
-### Option 1: Use the `subdir` Field (Recommended)
+### Option 1: Use the `sourcePath` Field (Recommended)
 
-Read `cpkg.lock.yaml` and use the `subdir` field:
+The lockfile includes a `sourcePath` field that points directly to where the source files are:
 
 ```python
 # Python example (for CMake or build scripts)
@@ -60,15 +61,12 @@ with open('cpkg.lock.yaml') as f:
     lock = yaml.safe_load(f)
 
 for module, dep in lock['dependencies'].items():
-    base_path = dep['path']
-    if dep.get('subdir'):
-        source_path = f"{base_path}/{dep['subdir']}"
-    else:
-        source_path = base_path
-    
+    source_path = dep['sourcePath']  # Already computed: path + subdir
     # Add source_path to your build system
     print(f"Module {module}: sources in {source_path}")
 ```
+
+**Note**: The `sourcePath` field is automatically computed by cpkg, so you don't need to manually combine `path` and `subdir`.
 
 ### Option 2: Use Environment Variables
 
@@ -123,8 +121,9 @@ if(NOT CPKG_DEP_ROOT)
 endif()
 
 # For each dependency, add source files
-# (In practice, you'd parse the YAML properly)
-set(INTRUSIVE_LIST_DIR "${CPKG_DEP_ROOT}/github.com/user/repo/intrusive_list/intrusive_list")
+# Read sourcePath from lockfile (or use path + subdir)
+# Example: sourcePath = "third_party/cpkg/github.com/user/repo/intrusive_list/intrusive_list"
+set(INTRUSIVE_LIST_DIR "${CMAKE_SOURCE_DIR}/third_party/cpkg/github.com/user/repo/intrusive_list/intrusive_list")
 add_library(intrusive_list STATIC
     ${INTRUSIVE_LIST_DIR}/intrusive_list.c
 )
@@ -154,7 +153,7 @@ span.o: $(SPAN_DIR)/span.c
 1. **cpkg manages dependencies**: It resolves versions, checks out commits, and manages submodules.
 
 2. **Your build system compiles**: You're responsible for:
-   - Finding source files (using `subdir` from lockfile or environment variables)
+   - Finding source files (use `sourcePath` from lockfile - it's already computed)
    - Adding include paths
    - Compiling and linking
 
