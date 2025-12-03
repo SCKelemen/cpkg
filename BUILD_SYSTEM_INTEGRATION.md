@@ -84,10 +84,14 @@ DEP_ROOT="${CPKG_DEP_ROOT:-third_party/cpkg}"
 
 ### Option 3: Use `cpkg vendor`
 
-The `cpkg vendor` command copies only the needed files to a flat structure:
+The `cpkg vendor` command creates a flat structure with only the needed files:
 
 ```bash
+# Copy files (default)
 cpkg vendor
+
+# Or create symlinks (faster, no duplication)
+cpkg vendor --symlink
 ```
 
 This creates:
@@ -100,6 +104,10 @@ vendor/
                 ├── intrusive_list.h
                 └── intrusive_list.c
 ```
+
+**Symlinks vs Copying:**
+- **Symlinks**: No disk duplication, always in sync with submodules, faster. Best for Unix/Linux/macOS.
+- **Copying**: Works everywhere, more reliable with all build systems, uses more disk space.
 
 Then your build system can use `vendor/` as a simple include path.
 

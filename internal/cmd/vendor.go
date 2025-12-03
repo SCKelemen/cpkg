@@ -11,10 +11,14 @@ import (
 	"github.com/SCKelemen/cpkg/internal/manifest"
 )
 
-var vendorRoot string
+var (
+	vendorRoot    string
+	vendorSymlink bool
+	vendorCopy    bool
+)
 
 var vendorCmd = clix.NewCommand("vendor",
-	clix.WithCommandShort("Copy resolved sources into vendor directory"),
+	clix.WithCommandShort("Copy or symlink resolved sources into vendor directory"),
 	clix.WithCommandRun(func(ctx *clix.Context) error {
 		return runVendor(ctx)
 	}),
@@ -28,6 +32,20 @@ func init() {
 			Usage: "Vendor root directory",
 		},
 		Value: &vendorRoot,
+	})
+	vendorCmd.Flags.BoolVar(clix.BoolVarOptions{
+		FlagOptions: clix.FlagOptions{
+			Name:  "symlink",
+			Usage: "Create symlinks instead of copying files (faster, no duplication, default on Unix)",
+		},
+		Value: &vendorSymlink,
+	})
+	vendorCmd.Flags.BoolVar(clix.BoolVarOptions{
+		FlagOptions: clix.FlagOptions{
+			Name:  "copy",
+			Usage: "Force copying files instead of symlinks (more compatible, uses more disk space)",
+		},
+		Value: &vendorCopy,
 	})
 }
 
@@ -62,6 +80,11 @@ func runVendor(ctx *clix.Context) error {
 		return fmt.Errorf("failed to create vendor directory: %w", err)
 	}
 
+	// Determine whether to use symlinks
+	// Default: use symlinks on Unix (macOS/Linux), copy on Windows
+	// User can override with --symlink or --copy flags
+	useSymlink := vendorSymlink || (!vendorCopy && os.PathSeparator == '/')
+
 	count := 0
 	for modulePath, dep := range lock.Dependencies {
 		sourcePath := dep.Path
@@ -88,16 +111,41 @@ func runVendor(ctx *clix.Context) error {
 			return fmt.Errorf("failed to create vendor directory for %s: %w", modulePath, err)
 		}
 
-		// Copy directory (simplified - in production you might want to use a proper copy library)
-		if err := copyDir(sourcePath, destPath); err != nil {
-			return fmt.Errorf("failed to copy %s: %w", modulePath, err)
+		// Remove existing destination if it exists
+		if _, err := os.Lstat(destPath); err == nil {
+			if err := os.RemoveAll(destPath); err != nil {
+				return fmt.Errorf("failed to remove existing destination %s: %w", destPath, err)
+			}
+		}
+
+		if useSymlink {
+			// Create symlink
+			// Use relative path for portability
+			relSource, err := filepath.Rel(filepath.Dir(destPath), sourcePath)
+			if err != nil {
+				// Fallback to absolute if relative fails
+				relSource = sourcePath
+			}
+			if err := os.Symlink(relSource, destPath); err != nil {
+				return fmt.Errorf("failed to create symlink for %s: %w", modulePath, err)
+			}
+			fmt.Fprintf(ctx.App.Out, "Symlinked %s @ %s\n", modulePath, dep.Version)
+		} else {
+			// Copy directory (simplified - in production you might want to use a proper copy library)
+			if err := copyDir(sourcePath, destPath); err != nil {
+				return fmt.Errorf("failed to copy %s: %w", modulePath, err)
+			}
+			fmt.Fprintf(ctx.App.Out, "Vendored %s @ %s\n", modulePath, dep.Version)
 		}
 
 		count++
-		fmt.Fprintf(ctx.App.Out, "Vendored %s @ %s\n", modulePath, dep.Version)
 	}
 
-	fmt.Fprintf(ctx.App.Out, "\nVendored %d dependencies into %s/\n", count, vRoot)
+	action := "Vendored"
+	if useSymlink {
+		action = "Symlinked"
+	}
+	fmt.Fprintf(ctx.App.Out, "\n%s %d dependencies into %s/\n", action, count, vRoot)
 	return nil
 }
 

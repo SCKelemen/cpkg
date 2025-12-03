@@ -258,10 +258,22 @@ The lockfile's `subdir` field tells you where the files are. Your build system s
 For a simpler flat structure, use `cpkg vendor`:
 
 ```bash
+# Default: creates symlinks on Unix (macOS/Linux), copies on Windows
 cpkg vendor
+
+# Force symlinks (faster, no duplication)
+cpkg vendor --symlink
+
+# Force copying (more compatible, uses more disk space)
+cpkg vendor --copy
 ```
 
-This copies only the needed files to `vendor/`, making it easier for your build system to find them.
+**Symlinks vs Copying:**
+- **Symlinks** (default on Unix): No disk duplication, always in sync with submodules, faster. Best for development on macOS/Linux.
+- **Copies** (default on Windows): More compatible with all build systems, works offline after vendoring.
+- **Copying** (default): Works everywhere, build systems always handle it correctly, but uses more disk space.
+
+Both create a clean `vendor/` directory structure that's easy for build systems to use.
 
 See [BUILD_SYSTEM_INTEGRATION.md](./BUILD_SYSTEM_INTEGRATION.md) for detailed examples with CMake, Make, etc.
 
