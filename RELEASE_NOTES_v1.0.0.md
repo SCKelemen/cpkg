@@ -1,0 +1,108 @@
+# cpkg v1.0.0 Release Notes
+
+## Overview
+
+cpkg v1.0.0 is the first stable release of cpkg, a source-only package manager for C source code. cpkg manages dependencies using git submodules and semantic versioning, leaving builds to external tools.
+
+## Installation
+
+### From Source (Recommended)
+
+```bash
+go install github.com/SCKelemen/cpkg@v1.0.0
+```
+
+### Pre-built Binaries
+
+Download pre-built binaries for your platform from the [Releases](https://github.com/SCKelemen/cpkg/releases) page:
+
+- **Linux**: `cpkg-linux-amd64`
+- **macOS**: `cpkg-darwin-amd64`
+- **Windows**: `cpkg-windows-amd64.exe`
+
+After downloading, make the binary executable and move it to your PATH:
+
+```bash
+# Linux/macOS
+chmod +x cpkg-linux-amd64
+sudo mv cpkg-linux-amd64 /usr/local/bin/cpkg
+
+# Windows
+# Add to your PATH or use directly
+```
+
+## What's New
+
+### Core Features
+
+- **Git submodule-based dependency management**: Dependencies are managed as git submodules for clean, reviewable changes
+- **Semantic versioning support**: Use semver constraints (e.g., `^1.0.0`, `~2.1.0`) to specify dependency versions
+- **Lockfile for reproducible builds**: `cpkg.lock.yaml` pins exact versions, commits, and checksums
+- **Multi-module support**: Use multiple independently versioned modules from the same repository
+- **Incremental adoption**: Use arbitrary subdirectories from any repository without upstream changes
+- **Version flexibility**: Different subdirectories can use different versions from the same repository
+
+### Commands
+
+- `cpkg init` - Initialize a new module
+- `cpkg add` - Add dependencies
+- `cpkg tidy` - Resolve and lock dependencies
+- `cpkg sync` - Sync git submodules
+- `cpkg vendor` - Create vendor directory (symlink or copy)
+- `cpkg upgrade` - Upgrade dependencies within constraints
+- `cpkg outdated` - Check for available updates
+- `cpkg list` - List all dependencies
+- `cpkg explain` - Show detailed dependency information
+- `cpkg status` - Check dependency status
+- `cpkg build` - Run build commands
+- `cpkg test` - Run test commands
+- `cpkg graph` - Show dependency graph
+
+### Documentation
+
+Comprehensive documentation is available:
+
+- [README](README.md) - Quick start and overview
+- [Full Specification](cpkg.md) - Complete specification
+- [Build System Integration](docs/build-system-integration.md) - Integration with CMake, Make, etc.
+- [Multi-Module Support](docs/multi-module-design.md) - Using multiple modules from the same repository
+- [Multiple Commits](docs/multi-module-commits.md) - How cpkg handles different commits
+- [Vendor Directory](docs/vendor-explanation.md) - Understanding the vendor command
+
+### GitHub Actions Integration
+
+- Automated dependency updates via reusable GitHub Action
+- Release workflow for automated binary builds
+
+## Breaking Changes
+
+This is the first stable release, so there are no breaking changes from previous versions.
+
+## Known Limitations
+
+- **Single manifest per repository**: cpkg supports only one `cpkg.yaml` file per repository (at the root). Multiple manifest files in subdirectories are not currently supported (unlike Go's `go.mod`). This may be improved in future releases.
+
+## Requirements
+
+- Go 1.21 or later (for building from source)
+- Git 2.5 or later
+- Unix-like system (Linux, macOS) or Windows
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Security
+
+To report security vulnerabilities, please email [security@kelemen.com](mailto:security@kelemen.com). See [SECURITY.md](SECURITY.md) for details.
+
+## Links
+
+- **Repository**: https://github.com/SCKelemen/cpkg
+- **Issues**: https://github.com/SCKelemen/cpkg/issues
+- **Documentation**: See [README.md](README.md) and [docs/](docs/) directory
+
