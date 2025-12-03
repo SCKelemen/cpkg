@@ -60,8 +60,8 @@ jobs:
         run: |
           # Artifacts are downloaded into subdirectories, move them to root
           mkdir -p release
-          find artifacts -type f -executable -exec mv {} release/ \;
-          find artifacts -name "*.exe" -exec mv {} release/ \;
+          # Move all cpkg binaries (executable on Unix, .exe on Windows)
+          find artifacts -type f \( -name "cpkg" -o -name "cpkg.exe" \) -exec mv {} release/ \;
           ls -la release/
       
       - name: Create GitHub Release
