@@ -22,6 +22,13 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       
+      - name: Clean Go cache (if needed)
+        shell: bash
+        continue-on-error: true
+        run: |
+          # Clear any corrupted cache entries that might cause tar warnings
+          go clean -cache -modcache -testcache 2>/dev/null || true
+      
       - name: Verify dependencies
         run: go mod verify
       
@@ -53,6 +60,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+      
+      - name: Clean Go cache (if needed)
+        shell: bash
+        continue-on-error: true
+        run: |
+          # Clear any corrupted cache entries
+          go clean -cache -modcache -testcache 2>/dev/null || true
       
       - name: Build
         run: go build -v -o ${{ matrix.binary-name }} .
