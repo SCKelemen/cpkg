@@ -83,14 +83,19 @@ By using separate submodules, each module can be at its own commit independently
 - ⚠️ More disk space (each submodule is a full clone)
 - ⚠️ More git operations during sync
 
-### Alternative Approaches (Not Implemented)
+### Alternative Approaches (Future Ideas)
+
+These approaches could be explored in future releases to optimize submodule usage:
 
 1. **Git Worktrees**: Use git worktrees to have multiple checkouts from one submodule
-   - More complex to manage
-   - Requires git 2.5+
+   - **Pros**: Single submodule entry, multiple checkouts at different commits
+   - **Cons**: More complex to manage, requires git 2.5+, worktrees are less familiar to users
+   - **Status**: Not implemented - current approach (separate submodules) is simpler and more explicit
 
-2. **Sparse Checkout**: Checkout only needed paths, but still same commit limitation
-   - Doesn't solve the different commits problem
+2. **Sparse Checkout**: Checkout only needed paths from a submodule
+   - **Pros**: Smaller disk usage, faster checkouts
+   - **Cons**: Doesn't solve the different commits problem, adds complexity
+   - **Status**: Not implemented - could be useful optimization for large repos with single-commit modules
 
 3. **Accept Limitation**: Require all modules from same repo to be at same commit
    - Simplest, but loses independent versioning
