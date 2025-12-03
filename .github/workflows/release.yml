@@ -31,6 +31,13 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       
+      - name: Configure Go environment
+        shell: bash
+        run: |
+          # Ensure GOPROXY is set correctly (fixes Windows issues)
+          go env -w GOPROXY=https://proxy.golang.org,direct
+          go env -w GOSUMDB=sum.golang.org
+      
       - name: Get version from tag
         id: version
         shell: bash
