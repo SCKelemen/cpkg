@@ -37,10 +37,16 @@ func LsRemoteTags(repoURL string) ([]string, error) {
 }
 
 func GetCommitForTag(repoURL, tag string) (string, error) {
-	cmd := exec.Command("git", "ls-remote", repoURL, tag)
+	// Use ^{} to dereference annotated tags to get the actual commit
+	cmd := exec.Command("git", "ls-remote", repoURL, tag+"^{}")
 	output, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to get commit for tag: %w", err)
+		// Fallback: try without ^{} in case it's a lightweight tag
+		cmd = exec.Command("git", "ls-remote", repoURL, tag)
+		output, err = cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to get commit for tag: %w", err)
+		}
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
