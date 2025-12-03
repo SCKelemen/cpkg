@@ -56,16 +56,18 @@ jobs:
           pattern: cpkg-*
           merge-multiple: false
       
-      - name: List downloaded artifacts
+      - name: Prepare release files
         run: |
-          echo "Artifacts directory contents:"
-          ls -la artifacts/ || echo "artifacts directory not found"
-          find . -name "cpkg*" -type f || echo "No cpkg files found"
+          # Artifacts are downloaded into subdirectories, move them to root
+          mkdir -p release
+          find artifacts -type f -executable -exec mv {} release/ \;
+          find artifacts -name "*.exe" -exec mv {} release/ \;
+          ls -la release/
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**/*
+          files: release/*
           draft: false
           prerelease: false
           generate_release_notes: true
