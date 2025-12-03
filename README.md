@@ -132,7 +132,7 @@ Each module from the same repo gets its own git submodule. This allows independe
 - `intrusive_list/v1.0.0` → commit `abc123` → submodule at `third_party/cpkg/.../intrusive_list`
 - `span/v1.0.0` → commit `def456` → submodule at `third_party/cpkg/.../span`
 
-This is necessary because git submodules can only point to a single commit. See [MULTI_MODULE_COMMITS.md](./MULTI_MODULE_COMMITS.md) for details.
+This is necessary because git submodules can only point to a single commit. See [Multiple Commits](docs/multi-module-commits.md) for details.
 
 ### Checking for Updates
 
@@ -323,7 +323,7 @@ cpkg vendor --copy
 
 Both create a clean `vendor/` directory structure that's easy for build systems to use.
 
-See [BUILD_SYSTEM_INTEGRATION.md](./BUILD_SYSTEM_INTEGRATION.md) for detailed examples with CMake, Make, etc.
+See [Build System Integration](docs/build-system-integration.md) for detailed examples with CMake, Make, etc.
 
 ## Documentation
 
