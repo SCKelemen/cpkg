@@ -8,6 +8,8 @@ Support multiple independently versioned modules/packages from the same git repo
 
 1. **Data structures library**: A repo with multiple data structures (`intrusive_list`, `span`, `view`) that can be imported independently
 2. **Protocol implementations**: A repo with multiple protocol clients (`brski`, `est`, `fdo`, `oadopt`) that are versioned separately
+3. **Incremental adoption**: Use arbitrary subdirectories from any repo (e.g., `mbedtls/library`, `mbedtls/include`) without requiring upstream support
+4. **Version flexibility**: Use different versions of different subdirectories from the same repo (e.g., `library@3.6.4` and `include@3.6.5`)
 
 ## Design
 
@@ -26,7 +28,7 @@ Examples:
 
 ### Tag Naming Conventions
 
-Two tag formats are supported:
+Two tag formats are supported for repos you control:
 
 1. **Prefix format** (recommended): `subpath/v1.0.0`
    - Example: `intrusive_list/v1.0.0`, `brski/v2.1.0`
@@ -35,6 +37,15 @@ Two tag formats are supported:
 2. **Suffix format**: `v1.0.0-subpath`
    - Example: `v1.0.0-intrusive_list`, `v2.1.0-brski`
    - Alternative for repos that prefer version-first
+
+**Fallback for arbitrary repos:**
+
+If a subpath doesn't have its own tags, cpkg falls back to using the root repository tags. This allows you to use any subdirectory from any repo without requiring upstream changes:
+
+- Module: `github.com/Mbed-TLS/mbedtls/library`
+- No tags like `library/v3.6.0` found
+- Falls back to root tags: `v3.6.0`, `v3.6.5`, etc.
+- Uses the selected tag and points to the `library/` subdirectory
 
 ### Implementation Details
 

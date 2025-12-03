@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/SCKelemen/cpkg/internal/git"
 	"github.com/SCKelemen/cpkg/internal/lockfile"
@@ -43,26 +44,53 @@ func resolveDependencies(m *manifest.Manifest, depRoot string) (*lockfile.Lockfi
 		// Extract version from tags (remove subpath prefix/suffix)
 		var versionTags []string
 		for _, tag := range tags {
-			version, err := modulepath.ExtractVersionFromTag(tag, mp.Subpath)
-			if err != nil {
+			version, parseErr := modulepath.ExtractVersionFromTag(tag, mp.Subpath)
+			if parseErr != nil {
 				continue // Skip tags that don't match format
 			}
 			versionTags = append(versionTags, version)
 		}
 
-		// Find compatible version
-		selectedVersion, err := findCompatibleVersion(versionTags, dep.Version)
-		if err != nil {
-			return nil, fmt.Errorf("no compatible version found for %s (constraint: %s): %w", modulePath, dep.Version, err)
-		}
+		// If no subpath-specific tags found, fall back to root repo tags
+		// This allows using arbitrary subdirectories from any repo
+		var selectedVersion string
+		var selectedTag string
+		
+		if len(versionTags) == 0 && mp.Subpath != "" {
+			// No subpath tags - use root repo tags and point to subdirectory
+			var rootVersionTags []string
+			for _, tag := range allTags {
+				// Filter out tags that look like they have subpaths
+				if strings.Contains(tag, "/") && !strings.HasPrefix(tag, "v") {
+					continue // Likely a subpath tag
+				}
+				if _, parseErr := semver.Parse(tag); parseErr == nil {
+					rootVersionTags = append(rootVersionTags, tag)
+				}
+			}
+			
+			var resolveErr error
+			selectedVersion, resolveErr = findCompatibleVersion(rootVersionTags, dep.Version)
+			if resolveErr != nil {
+				return nil, fmt.Errorf("no compatible version found for %s (constraint: %s): %w", modulePath, dep.Version, resolveErr)
+			}
+			selectedTag = selectedVersion // Root tag, no subpath prefix
+		} else {
+			// Find compatible version from subpath tags
+			var resolveErr error
+			selectedVersion, resolveErr = findCompatibleVersion(versionTags, dep.Version)
+			if resolveErr != nil {
+				return nil, fmt.Errorf("no compatible version found for %s (constraint: %s): %w", modulePath, dep.Version, resolveErr)
+			}
 
-		// Map back to the original tag format
-		selectedTag := selectedVersion
-		for _, tag := range tags {
-			version, err := modulepath.ExtractVersionFromTag(tag, mp.Subpath)
-			if err == nil && version == selectedVersion {
-				selectedTag = tag
-				break
+			// Map back to the original tag format
+			selectedTag = selectedVersion
+			for _, tag := range tags {
+				version, parseErr := modulepath.ExtractVersionFromTag(tag, mp.Subpath)
+				if parseErr == nil && version == selectedVersion {
+					selectedTag = tag
+					break
+				}
 			}
 		}
 

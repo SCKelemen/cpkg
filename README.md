@@ -11,6 +11,8 @@ cpkg is a minimal, Go-implemented module and dependency manager for C (and SKC f
 * **Semver**: dependencies are versioned with semantic version tags.
 * **Build-agnostic**: cpkg resolves and lays out source; your build system compiles it.
 * **Submodule-native**: cpkg wraps git submodules to keep repos clean and reviewable.
+* **Incremental adoption**: Use arbitrary subdirectories from any repo without upstream changes.
+* **Version flexibility**: Different subdirectories can use different versions from the same repo.
 
 ## Installation
 
@@ -55,7 +57,11 @@ cpkg add github.com/user/repo/span@^1.0.0
 
 ### Multi-Module Support
 
-cpkg supports multiple independently versioned modules from the same repository. This is useful for monorepos where related components are versioned separately.
+cpkg supports multiple modules from the same repository, with two modes:
+
+#### 1. Versioned Submodules (For Repos You Control)
+
+If you control the repository, you can create tags for each submodule:
 
 **Tag Naming Conventions:**
 
@@ -81,6 +87,40 @@ dependencies:
   github.com/user/firmware-lib/span:
     version: "^1.0.0"
 ```
+
+#### 2. Arbitrary Subdirectories (For Any Repo) - Incremental Adoption
+
+You can use **any subdirectory** from **any repository**, even if it doesn't have cpkg-specific tags or even know about cpkg. This enables **incremental adoption** - you can start using parts of a library without requiring the upstream repo to support cpkg.
+
+cpkg will use the root repository tags and point to the subdirectory:
+
+```yaml
+# cpkg.yaml
+dependencies:
+  github.com/Mbed-TLS/mbedtls/library:  # Just the library source files
+    version: "^3.6.0"
+  github.com/Mbed-TLS/mbedtls/include:  # Just the headers
+    version: "^3.6.0"
+```
+
+**Different versions for different subdirectories:**
+
+You can even use different versions of different subdirectories from the same repo:
+
+```yaml
+# cpkg.yaml
+dependencies:
+  github.com/Mbed-TLS/mbedtls/library:  # Use v3.6.4
+    version: "3.6.4"
+  github.com/Mbed-TLS/mbedtls/include:  # Use v3.6.5
+    version: "3.6.5"
+```
+
+This works because cpkg:
+- Uses the root repo tags (e.g., `v3.6.4`, `v3.6.5`)
+- Points to the subdirectory (e.g., `library/` or `include/`)
+- Creates **separate submodules** for each, allowing different commits
+- Each submodule can be at a different commit, even from the same repo
 
 **How it works with different commits:**
 
