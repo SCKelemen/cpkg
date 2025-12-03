@@ -31,8 +31,28 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      
+      - name: Get commit hash
+        id: commit
+        run: |
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "commit=$COMMIT" >> $GITHUB_OUTPUT
+      
+      - name: Get build date
+        id: date
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+      
       - name: Build
-        run: go build -o ${{ matrix.binary-name }} .
+        run: |
+          go build -ldflags "-X github.com/SCKelemen/cpkg/internal/cmd.Version=${{ steps.version.outputs.version }} -X github.com/SCKelemen/cpkg/internal/cmd.Commit=${{ steps.commit.outputs.commit }} -X github.com/SCKelemen/cpkg/internal/cmd.Date=${{ steps.date.outputs.date }}" -o ${{ matrix.binary-name }} .
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
