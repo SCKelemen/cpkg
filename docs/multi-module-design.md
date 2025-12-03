@@ -4,6 +4,8 @@
 
 cpkg supports multiple independently versioned modules/packages from the same git repository. This enables monorepo-style organization where related components can be versioned and imported separately.
 
+**Important Limitation**: cpkg currently supports only a single `cpkg.yaml` manifest file per repository (at the root). Unlike Go's `go.mod`, cpkg does not support multiple manifest files in subdirectories. All modules from the same repository share the same manifest and lockfile. This limitation may be addressed in future releases to enable true monorepo-style multi-module support with separate dependency management per subdirectory.
+
 ## Use Cases
 
 1. **Data structures library**: A repository with multiple data structures (`intrusive_list`, `span`, `view`) that can be imported independently

@@ -62,6 +62,8 @@ cpkg add github.com/user/repo/span@^1.0.0
 
 cpkg supports multiple modules from the same repository, with two modes:
 
+**Note**: cpkg currently supports only a single `cpkg.yaml` manifest file per repository (at the root). Unlike Go's `go.mod`, cpkg does not support multiple manifest files in subdirectories. This may be improved in future releases.
+
 #### 1. Versioned Submodules (For Repos You Control)
 
 If you control the repository, you can create tags for each submodule:

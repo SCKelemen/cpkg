@@ -112,6 +112,8 @@ This copies only the needed files to `vendor/`, making it easier for build syste
 
 YAML manifest describing the module and its direct dependencies.
 
+**Limitation**: cpkg supports only a single `cpkg.yaml` file per repository, located at the repository root. Unlike Go's `go.mod`, cpkg does not currently support multiple manifest files in subdirectories. Commands run from subdirectories will use the root manifest. This limitation may be addressed in future releases to enable true monorepo-style multi-module support.
+
 ```yaml
 apiVersion: cpkg.ringil.dev/v0
 kind: Module
