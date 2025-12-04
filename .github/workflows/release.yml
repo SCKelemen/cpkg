@@ -67,11 +67,16 @@ jobs:
             go build -ldflags "-X github.com/SCKelemen/cpkg/internal/cmd.Version=${{ steps.version.outputs.version }} -X github.com/SCKelemen/cpkg/internal/cmd.Commit=${{ steps.commit.outputs.commit }} -X github.com/SCKelemen/cpkg/internal/cmd.Date=${{ steps.date.outputs.date }}" -o ${{ matrix.binary-name }} .
           fi
       
+      - name: Rename binary with platform info
+        shell: bash
+        run: |
+          mv ${{ matrix.binary-name }} ${{ matrix.artifact-name }}
+      
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: ${{ matrix.binary-name }}
+          path: ${{ matrix.artifact-name }}
           retention-days: 90
 
   release:
@@ -116,11 +121,12 @@ jobs:
           merge-multiple: false
       
       - name: Prepare release files
+        shell: bash
         run: |
           # Artifacts are downloaded into subdirectories, move them to root
           mkdir -p release
-          # Move all cpkg binaries
-          find artifacts -type f -name "cpkg" -exec mv {} release/ \;
+          # Move all binaries (they should already have platform-specific names)
+          find artifacts -type f -name "cpkg-*" -exec mv {} release/ \;
           ls -la release/
       
       - name: Create GitHub Release
