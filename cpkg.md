@@ -510,14 +510,14 @@ git.internal/ringil/stm32-hal-skc      ^1.1.0       v1.1.4   v1.1.2    OUT_OF_SY
 
 ---
 
-#### 3.2.7 `cpkg outdated`
+#### 3.2.7 `cpkg check`
 
-**Purpose:** Discover newer versions of dependencies (without modifying files).
+**Purpose:** Check for newer versions of dependencies (without modifying files).
 
 **Usage:**
 
 ```sh
-cpkg outdated
+cpkg check
 ```
 
 **Behavior:**

@@ -64,7 +64,7 @@ If this action is published in a separate repository (e.g., `github.com/SCKeleme
     pr-body: |
       Automated dependency updates via cpkg.
       
-      Run `cpkg outdated` to see what changed.
+      Run `cpkg check` to see what changed.
     branch: update-deps
     commit-message: "chore: update dependencies"
     go-version: "1.21"
@@ -73,7 +73,7 @@ If this action is published in a separate repository (e.g., `github.com/SCKeleme
 ## How It Works
 
 1. Installs cpkg using `go install`
-2. Checks for outdated dependencies using `cpkg outdated`
+2. Checks for available updates using `cpkg check`
 3. If updates are available, runs `cpkg upgrade` to upgrade all dependencies
 4. Creates a pull request with the changes
 

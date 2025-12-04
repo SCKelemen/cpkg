@@ -13,14 +13,14 @@ import (
 	"github.com/SCKelemen/cpkg/internal/semver"
 )
 
-var outdatedCmd = clix.NewCommand("outdated",
-	clix.WithCommandShort("Discover newer versions of dependencies"),
+var checkCmd = clix.NewCommand("check",
+	clix.WithCommandShort("Check for newer versions of dependencies"),
 	clix.WithCommandRun(func(ctx *clix.Context) error {
 		return runOutdated(ctx)
 	}),
 )
 
-func runOutdated(ctx *clix.Context) error {
+func runCheck(ctx *clix.Context) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)

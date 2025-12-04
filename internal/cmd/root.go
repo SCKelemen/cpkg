@@ -33,7 +33,7 @@ func NewApp() *clix.App {
 		statusCmd,
 		listCmd,
 		explainCmd,
-		outdatedCmd,
+		checkCmd,
 		buildCmd,
 		testCmd,
 		graphCmd,

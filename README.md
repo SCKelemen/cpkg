@@ -162,7 +162,7 @@ This is necessary because git submodules can only point to a single commit. See 
 
 ```bash
 # Check which dependencies have updates available
-cpkg outdated
+cpkg check
 ```
 
 This will show a table of dependencies with their current version, latest compatible version, and update type (major/minor/patch).
@@ -201,7 +201,7 @@ If you prefer to manually update dependencies:
 
 ```bash
 # 1. Check what's outdated
-cpkg outdated
+cpkg check
 
 # 2. Update the version constraint in cpkg.yaml (optional)
 cpkg add github.com/user/repo@^2.0.0
@@ -263,7 +263,7 @@ If you prefer to use a dedicated action repository (e.g., `github.com/SCKelemen/
 ```
 
 The action will:
-- Check for outdated dependencies using `cpkg outdated`
+- Check for outdated dependencies using `cpkg check`
 - Upgrade them to latest compatible versions using `cpkg upgrade`
 - Create a pull request with the changes (only if there are actual updates)
 
