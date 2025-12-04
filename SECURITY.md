@@ -32,7 +32,7 @@ cpkg manages git submodules and interacts with external repositories. Security c
 ## Best Practices
 
 - Review dependencies before adding them
-- Keep dependencies up to date: `cpkg outdated` and `cpkg upgrade`
+- Keep dependencies up to date: `cpkg check` and `cpkg upgrade`
 - Verify lockfile checksums match expected values
 - Use version constraints to limit dependency updates
 

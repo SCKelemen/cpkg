@@ -263,7 +263,7 @@ If you prefer to use a dedicated action repository (e.g., `github.com/SCKelemen/
 ```
 
 The action will:
-- Check for outdated dependencies using `cpkg check`
+- Check for available updates using `cpkg check`
 - Upgrade them to latest compatible versions using `cpkg upgrade`
 - Create a pull request with the changes (only if there are actual updates)
 
