@@ -1,0 +1,181 @@
+# cpkg v1.1.0 Release Notes
+
+## Overview
+
+cpkg v1.1.0 introduces recursive module discovery (Go-style), renames the lockfile for better clarity, and adds version/help commands. This release focuses on improving developer experience and monorepo support.
+
+## Installation
+
+### From Source (Recommended)
+
+```bash
+go install github.com/SCKelemen/cpkg@v1.1.0
+```
+
+### Pre-built Binaries
+
+Download pre-built binaries for your platform from the [Releases](https://github.com/SCKelemen/cpkg/releases) page:
+
+- **Linux**: `cpkg-linux-amd64`
+- **macOS**: `cpkg-darwin-amd64`
+
+After downloading, make the binary executable and move it to your PATH:
+
+```bash
+# Linux/macOS
+chmod +x cpkg-linux-amd64  # or cpkg-darwin-amd64
+sudo mv cpkg-linux-amd64 /usr/local/bin/cpkg  # or cpkg-darwin-amd64
+```
+
+## What's New
+
+### Major Features
+
+#### 1. Recursive Module Discovery (Go-style)
+
+cpkg now uses **Go-style module discovery**: when you run `cpkg` commands, it automatically finds the nearest `cpkg.yaml` by walking up the directory tree from your current working directory. This enables:
+
+- **Multiple modules per repository**: You can have multiple `cpkg.yaml` files in subdirectories, each treated as an independent module
+- **Independent dependency management**: Each module has its own `lock.cpkg.yaml` and dependency graph
+- **Flexible project structure**: Run `cpkg` commands from any subdirectory and it will find the correct module
+
+**Example structure:**
+```
+my-repo/
+├── cpkg.yaml              # Root module
+├── lock.cpkg.yaml
+├── libs/
+│   ├── span/
+│   │   ├── cpkg.yaml      # Nested module
+│   │   └── lock.cpkg.yaml
+│   └── view/
+│       ├── cpkg.yaml      # Another nested module
+│       └── lock.cpkg.yaml
+```
+
+#### 2. Lockfile Rename
+
+The lockfile has been renamed from `cpkg.lock.yaml` to `lock.cpkg.yaml` for better naming consistency and collision avoidance with other tools.
+
+**Migration:** If you have an existing `cpkg.lock.yaml`, you can either:
+- Rename it manually to `lock.cpkg.yaml`
+- Or simply run `cpkg tidy` to regenerate it with the new name
+
+#### 3. Version and Help Commands
+
+Added standard CLI commands using clix extensions:
+
+- `cpkg --version` / `cpkg -v` - Show simple version information
+- `cpkg version` - Show detailed version information (includes commit, date, Go version, OS/arch)
+- `cpkg help` - Show help for the root command
+- `cpkg help [command]` - Show help for a specific command (e.g., `cpkg help add`)
+
+### Improvements
+
+- **Better test coverage**: Added tests for nested module discovery scenarios
+- **Enhanced documentation**: Updated all docs to reflect recursive module discovery
+- **CI/CD improvements**: Added comprehensive CI workflows, removed Windows support for faster builds
+- **Build-time version injection**: Version information is now injected at build time via ldflags
+
+## Breaking Changes
+
+### Lockfile Rename
+
+**Breaking:** The lockfile has been renamed from `cpkg.lock.yaml` to `lock.cpkg.yaml`.
+
+**Action required:**
+- If you have an existing `cpkg.lock.yaml`, rename it to `lock.cpkg.yaml`
+- Or run `cpkg tidy` to regenerate the lockfile with the new name
+- Update any build scripts or CI/CD that reference `cpkg.lock.yaml`
+
+## Commands
+
+All commands from v1.0.0 are still available:
+
+- `cpkg init` - Initialize a new module
+- `cpkg add` - Add dependencies
+- `cpkg tidy` - Resolve and lock dependencies
+- `cpkg sync` - Sync git submodules
+- `cpkg vendor` - Create vendor directory (symlink or copy)
+- `cpkg upgrade` - Upgrade dependencies within constraints
+- `cpkg outdated` - Check for available updates
+- `cpkg list` - List all dependencies
+- `cpkg explain` - Show detailed dependency information
+- `cpkg status` - Check dependency status
+- `cpkg build` - Run build commands
+- `cpkg test` - Run test commands
+- `cpkg graph` - Display the dependency graph
+
+**New commands:**
+- `cpkg version` - Show detailed version information
+- `cpkg help [command]` - Show command help
+
+## Documentation
+
+All documentation has been updated:
+
+- **README.md**: Added "Module Discovery" section with examples
+- **docs/multi-module-design.md**: Updated to reflect recursive discovery support
+- **cpkg.md**: Updated limitation text to reflect current behavior
+- All references updated from `cpkg.lock.yaml` to `lock.cpkg.yaml`
+
+## Technical Details
+
+### Module Discovery Algorithm
+
+When you run `cpkg` commands:
+1. Start at the current working directory (`$PWD`)
+2. Walk up the directory tree
+3. Stop at the first directory containing `cpkg.yaml`
+4. Use that directory as the module root
+5. Operate only on that module's manifest and lockfile
+
+This matches Go's `go.mod` discovery behavior.
+
+### Version Information
+
+Version information is injected at build time:
+- `Version`: Semantic version (e.g., "1.1.0")
+- `Commit`: Git commit hash (short)
+- `Date`: Build date (YYYY-MM-DD)
+
+For pre-built binaries, this information is set from the git tag. For local builds, it defaults to "dev".
+
+## Migration Guide
+
+### From v1.0.0 to v1.1.0
+
+1. **Rename lockfile** (if you have one):
+   ```bash
+   mv cpkg.lock.yaml lock.cpkg.yaml
+   ```
+
+2. **Or regenerate**:
+   ```bash
+   cpkg tidy
+   ```
+
+3. **Update any scripts** that reference `cpkg.lock.yaml`:
+   - Build scripts
+   - CI/CD workflows
+   - Documentation
+
+4. **Enjoy recursive module discovery**:
+   - You can now create nested `cpkg.yaml` files
+   - Each will be treated as an independent module
+   - Commands automatically find the nearest manifest
+
+## Requirements
+
+- Go 1.21 or later
+- Git (for submodule management)
+- A C build system (Make, CMake, Ninja, etc.)
+
+## Contributors
+
+Thank you to all contributors who helped make this release possible!
+
+## Full Changelog
+
+For a complete list of changes, see the [GitHub compare view](https://github.com/SCKelemen/cpkg/compare/v1.0.0...v1.1.0).
+
