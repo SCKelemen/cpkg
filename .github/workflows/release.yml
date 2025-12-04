@@ -102,21 +102,35 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           NOTES_FILE="docs/releases/${VERSION}.md"
           echo "Looking for release notes at: $NOTES_FILE"
+          echo "Current directory: $(pwd)"
+          echo "Files in docs/releases/:"
+          ls -la docs/releases/ || echo "docs/releases/ directory not found"
+          
           if [ -f "$NOTES_FILE" ]; then
             # Copy release notes file
             cp "$NOTES_FILE" release_notes.txt
-            echo "Found release notes file: $NOTES_FILE"
+            echo "✓ Found release notes file: $NOTES_FILE"
             echo "Release notes size: $(wc -l < release_notes.txt) lines"
+            echo "First 20 lines:"
+            head -20 release_notes.txt
           else
             # Fallback: create basic release notes
-            echo "No release notes file found for v${VERSION}, using auto-generated notes"
+            echo "✗ No release notes file found for v${VERSION}, using auto-generated notes"
             echo "# cpkg v${VERSION}" > release_notes.txt
             echo "" >> release_notes.txt
             echo "See [Full Changelog](https://github.com/${{ github.repository }}/compare/v1.0.0...v${VERSION}) for details." >> release_notes.txt
           fi
-          # Show first few lines for debugging
-          echo "Release notes preview:"
-          head -10 release_notes.txt || true
+          
+          # Verify file exists and has content
+          if [ ! -f "release_notes.txt" ]; then
+            echo "ERROR: release_notes.txt was not created!"
+            exit 1
+          fi
+          if [ ! -s "release_notes.txt" ]; then
+            echo "ERROR: release_notes.txt is empty!"
+            exit 1
+          fi
+          echo "✓ Release notes file ready: $(wc -l < release_notes.txt) lines"
       
       - name: Download all artifacts
         uses: actions/download-artifact@v4
