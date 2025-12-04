@@ -17,8 +17,9 @@ jobs:
             artifact-name: cpkg-linux-amd64
             binary-name: cpkg
           - os: macos-latest
-            artifact-name: cpkg-darwin-amd64
+            artifact-name: cpkg-darwin-arm64
             binary-name: cpkg
+            goarch: arm64
     
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +61,11 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          go build -ldflags "-X github.com/SCKelemen/cpkg/internal/cmd.Version=${{ steps.version.outputs.version }} -X github.com/SCKelemen/cpkg/internal/cmd.Commit=${{ steps.commit.outputs.commit }} -X github.com/SCKelemen/cpkg/internal/cmd.Date=${{ steps.date.outputs.date }}" -o ${{ matrix.binary-name }} .
+          if [ "${{ matrix.os }}" == "macos-latest" ] && [ -n "${{ matrix.goarch }}" ]; then
+            GOARCH=${{ matrix.goarch }} go build -ldflags "-X github.com/SCKelemen/cpkg/internal/cmd.Version=${{ steps.version.outputs.version }} -X github.com/SCKelemen/cpkg/internal/cmd.Commit=${{ steps.commit.outputs.commit }} -X github.com/SCKelemen/cpkg/internal/cmd.Date=${{ steps.date.outputs.date }}" -o ${{ matrix.binary-name }} .
+          else
+            go build -ldflags "-X github.com/SCKelemen/cpkg/internal/cmd.Version=${{ steps.version.outputs.version }} -X github.com/SCKelemen/cpkg/internal/cmd.Commit=${{ steps.commit.outputs.commit }} -X github.com/SCKelemen/cpkg/internal/cmd.Date=${{ steps.date.outputs.date }}" -o ${{ matrix.binary-name }} .
+          fi
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -90,7 +95,7 @@ jobs:
         shell: bash
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          NOTES_FILE="RELEASE_NOTES_v${VERSION}.md"
+          NOTES_FILE="docs/releases/${VERSION}.md"
           if [ -f "$NOTES_FILE" ]; then
             # Copy release notes file
             cp "$NOTES_FILE" release_notes.txt
