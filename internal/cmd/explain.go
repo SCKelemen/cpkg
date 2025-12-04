@@ -6,10 +6,34 @@ import (
 	"path/filepath"
 
 	"github.com/SCKelemen/clix"
+	"github.com/SCKelemen/cpkg/internal/format"
 	"github.com/SCKelemen/cpkg/internal/lockfile"
 	"github.com/SCKelemen/cpkg/internal/manifest"
 	"github.com/SCKelemen/cpkg/internal/submodule"
 )
+
+type explainOutput struct {
+	Module     string              `json:"module" yaml:"module"`
+	Constraint string              `json:"constraint" yaml:"constraint"`
+	Locked     *explainLocked      `json:"locked,omitempty" yaml:"locked,omitempty"`
+	LocalState *explainLocalState  `json:"local_state,omitempty" yaml:"local_state,omitempty"`
+}
+
+type explainLocked struct {
+	Version string `json:"version" yaml:"version"`
+	Commit  string `json:"commit" yaml:"commit"`
+	Sum     string `json:"sum" yaml:"sum"`
+	VCS     string `json:"vcs" yaml:"vcs"`
+	RepoURL string `json:"repo_url" yaml:"repo_url"`
+	Path    string `json:"path" yaml:"path"`
+}
+
+type explainLocalState struct {
+	SubmoduleExists bool   `json:"submodule_exists" yaml:"submodule_exists"`
+	CurrentCommit   string `json:"current_commit,omitempty" yaml:"current_commit,omitempty"`
+	InSync          bool   `json:"in_sync" yaml:"in_sync"`
+	IsDirty         bool   `json:"is_dirty" yaml:"is_dirty"`
+}
 
 var explainCmd = clix.NewCommand("explain",
 	clix.WithCommandShort("Explain a dependency in detail"),
@@ -56,21 +80,22 @@ func runExplain(ctx *clix.Context) error {
 	lock, err := lockfile.Load(lockfilePath)
 	hasLockfile := err == nil
 
-	// Print dependency information
-	fmt.Fprintf(ctx.App.Out, "Dependency: %s\n", modulePath)
-	fmt.Fprintf(ctx.App.Out, "─────────────────────────────────────────────────────────────\n\n")
-
-	fmt.Fprintf(ctx.App.Out, "Constraint: %s\n", dep.Version)
+	outputFormat := GetFormat()
+	output := explainOutput{
+		Module:     modulePath,
+		Constraint: dep.Version,
+	}
 
 	if hasLockfile {
 		if lockDep, exists := lock.Dependencies[modulePath]; exists {
-			fmt.Fprintf(ctx.App.Out, "\nLocked Information:\n")
-			fmt.Fprintf(ctx.App.Out, "  Version: %s\n", lockDep.Version)
-			fmt.Fprintf(ctx.App.Out, "  Commit:  %s\n", lockDep.Commit)
-			fmt.Fprintf(ctx.App.Out, "  Sum:     %s\n", lockDep.Sum)
-			fmt.Fprintf(ctx.App.Out, "  VCS:     %s\n", lockDep.VCS)
-			fmt.Fprintf(ctx.App.Out, "  Repo:    %s\n", lockDep.RepoURL)
-			fmt.Fprintf(ctx.App.Out, "  Path:    %s\n", lockDep.Path)
+			output.Locked = &explainLocked{
+				Version: lockDep.Version,
+				Commit:  lockDep.Commit,
+				Sum:     lockDep.Sum,
+				VCS:     lockDep.VCS,
+				RepoURL: lockDep.RepoURL,
+				Path:    lockDep.Path,
+			}
 
 			// Check local submodule state
 			submodulePath := lockDep.Path
@@ -93,35 +118,69 @@ func runExplain(ctx *clix.Context) error {
 				}
 			}
 
-			fmt.Fprintf(ctx.App.Out, "\nLocal State:\n")
-			if submodule.SubmoduleExists(relPath) {
+			localState := &explainLocalState{
+				SubmoduleExists: submodule.SubmoduleExists(relPath),
+			}
+
+			if localState.SubmoduleExists {
 				currentCommit, err := submodule.GetSubmoduleCommit(submodulePath)
 				if err == nil {
-					shortCommit := currentCommit
+					localState.CurrentCommit = currentCommit
+					localState.InSync = currentCommit == lockDep.Commit
+					dirty, _ := submodule.IsSubmoduleDirty(submodulePath)
+					localState.IsDirty = dirty
+				}
+			}
+
+			output.LocalState = localState
+		}
+	}
+
+	// Output in requested format
+	if outputFormat != format.FormatText {
+		return format.Write(ctx.App.Out, outputFormat, output)
+	}
+
+	// Text output
+	fmt.Fprintf(ctx.App.Out, "Dependency: %s\n", modulePath)
+	fmt.Fprintf(ctx.App.Out, "─────────────────────────────────────────────────────────────\n\n")
+	fmt.Fprintf(ctx.App.Out, "Constraint: %s\n", dep.Version)
+
+	if hasLockfile {
+		if output.Locked != nil {
+			fmt.Fprintf(ctx.App.Out, "\nLocked Information:\n")
+			fmt.Fprintf(ctx.App.Out, "  Version: %s\n", output.Locked.Version)
+			fmt.Fprintf(ctx.App.Out, "  Commit:  %s\n", output.Locked.Commit)
+			fmt.Fprintf(ctx.App.Out, "  Sum:     %s\n", output.Locked.Sum)
+			fmt.Fprintf(ctx.App.Out, "  VCS:     %s\n", output.Locked.VCS)
+			fmt.Fprintf(ctx.App.Out, "  Repo:    %s\n", output.Locked.RepoURL)
+			fmt.Fprintf(ctx.App.Out, "  Path:    %s\n", output.Locked.Path)
+
+			if output.LocalState != nil {
+				fmt.Fprintf(ctx.App.Out, "\nLocal State:\n")
+				if output.LocalState.SubmoduleExists {
+					shortCommit := output.LocalState.CurrentCommit
 					if len(shortCommit) > 7 {
 						shortCommit = shortCommit[:7]
 					}
 					fmt.Fprintf(ctx.App.Out, "  Submodule: exists\n")
 					fmt.Fprintf(ctx.App.Out, "  Current commit: %s\n", shortCommit)
 
-					if currentCommit == lockDep.Commit {
+					if output.LocalState.InSync {
 						fmt.Fprintf(ctx.App.Out, "  Status: ✓ in sync\n")
 					} else {
-						fmt.Fprintf(ctx.App.Out, "  Status: ⚠ out of sync (locked: %s)\n", lockDep.Commit[:7])
+						fmt.Fprintf(ctx.App.Out, "  Status: ⚠ out of sync (locked: %s)\n", output.Locked.Commit[:7])
 					}
 
-					dirty, _ := submodule.IsSubmoduleDirty(submodulePath)
-					if dirty {
+					if output.LocalState.IsDirty {
 						fmt.Fprintf(ctx.App.Out, "  Working tree: ⚠ dirty (has uncommitted changes)\n")
 					} else {
 						fmt.Fprintf(ctx.App.Out, "  Working tree: ✓ clean\n")
 					}
 				} else {
-					fmt.Fprintf(ctx.App.Out, "  Submodule: exists but cannot read commit\n")
+					fmt.Fprintf(ctx.App.Out, "  Submodule: ⚠ not initialized\n")
+					fmt.Fprintf(ctx.App.Out, "  Run 'cpkg sync' to initialize\n")
 				}
-			} else {
-				fmt.Fprintf(ctx.App.Out, "  Submodule: ⚠ not initialized\n")
-				fmt.Fprintf(ctx.App.Out, "  Run 'cpkg sync' to initialize\n")
 			}
 		} else {
 			fmt.Fprintf(ctx.App.Out, "\nLocked: ⚠ not locked\n")

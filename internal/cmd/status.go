@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/SCKelemen/clix"
+	"github.com/SCKelemen/cpkg/internal/format"
 	"github.com/SCKelemen/cpkg/internal/lockfile"
 	"github.com/SCKelemen/cpkg/internal/manifest"
 	"github.com/SCKelemen/cpkg/internal/submodule"
@@ -17,6 +18,18 @@ var statusCmd = clix.NewCommand("status",
 		return runStatus(ctx)
 	}),
 )
+
+type statusOutput struct {
+	Dependencies []statusDependency `json:"dependencies" yaml:"dependencies"`
+}
+
+type statusDependency struct {
+	Module        string `json:"module" yaml:"module"`
+	Constraint    string `json:"constraint" yaml:"constraint"`
+	LockedVersion string `json:"locked_version" yaml:"locked_version"`
+	LocalVersion  string `json:"local_version" yaml:"local_version"`
+	Status        string `json:"status" yaml:"status"`
+}
 
 func runStatus(ctx *clix.Context) error {
 	cwd, err := os.Getwd()
@@ -37,21 +50,23 @@ func runStatus(ctx *clix.Context) error {
 	lockfilePath := filepath.Join(filepath.Dir(manifestPath), lockfile.LockfileName)
 	lock, err := lockfile.Load(lockfilePath)
 	if err != nil {
+		if GetFormat() != format.FormatText {
+			// Return empty output for JSON/YAML when no lockfile
+			output := statusOutput{Dependencies: []statusDependency{}}
+			return format.Write(ctx.App.Out, GetFormat(), output)
+		}
 		fmt.Fprintf(ctx.App.Out, "No lockfile found. Run 'cpkg tidy' to create one.\n")
 		return nil
 	}
 
-	// Print header
-	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %-15s\n", "MODULE", "CONSTRAINT", "LOCKED", "LOCAL", "STATUS")
-	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %-15s\n",
-		"──────────────────────────────────────────────────",
-		"───────────────", "───────────────", "───────────────", "───────────────")
+	outputFormat := GetFormat()
+	deps := make([]statusDependency, 0, len(m.Dependencies))
 
 	// Check each dependency
 	for modulePath, dep := range m.Dependencies {
 		constraint := dep.Version
-		lockedVersion := "NO_LOCK"
-		localVersion := "MISSING"
+		lockedVersion := ""
+		localVersion := ""
 		status := "NO_LOCK"
 
 		if lockDep, exists := lock.Dependencies[modulePath]; exists {
@@ -102,12 +117,45 @@ func runStatus(ctx *clix.Context) error {
 					}
 				}
 			} else {
+				localVersion = "MISSING"
 				status = "MISSING"
 			}
+		} else {
+			localVersion = "MISSING"
 		}
 
+		deps = append(deps, statusDependency{
+			Module:        modulePath,
+			Constraint:    constraint,
+			LockedVersion: lockedVersion,
+			LocalVersion:  localVersion,
+			Status:        status,
+		})
+	}
+
+	// Output in requested format
+	if outputFormat != format.FormatText {
+		output := statusOutput{Dependencies: deps}
+		return format.Write(ctx.App.Out, outputFormat, output)
+	}
+
+	// Text output
+	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %-15s\n", "MODULE", "CONSTRAINT", "LOCKED", "LOCAL", "STATUS")
+	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %-15s\n",
+		"──────────────────────────────────────────────────",
+		"───────────────", "───────────────", "───────────────", "───────────────")
+
+	for _, dep := range deps {
+		locked := dep.LockedVersion
+		if locked == "" {
+			locked = "NO_LOCK"
+		}
+		local := dep.LocalVersion
+		if local == "" {
+			local = "MISSING"
+		}
 		fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %-15s\n",
-			modulePath, constraint, lockedVersion, localVersion, status)
+			dep.Module, dep.Constraint, locked, local, dep.Status)
 	}
 
 	return nil

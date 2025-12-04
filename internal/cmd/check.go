@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/SCKelemen/clix"
+	"github.com/SCKelemen/cpkg/internal/format"
 	"github.com/SCKelemen/cpkg/internal/git"
 	"github.com/SCKelemen/cpkg/internal/lockfile"
 	"github.com/SCKelemen/cpkg/internal/manifest"
@@ -19,6 +20,20 @@ var checkCmd = clix.NewCommand("check",
 		return runCheck(ctx)
 	}),
 )
+
+type checkOutput struct {
+	Dependencies []checkDependency `json:"dependencies" yaml:"dependencies"`
+	AllUpToDate  bool              `json:"all_up_to_date" yaml:"all_up_to_date"`
+}
+
+type checkDependency struct {
+	Module     string `json:"module" yaml:"module"`
+	Current    string `json:"current" yaml:"current"`
+	Latest     string `json:"latest" yaml:"latest"`
+	Constraint string `json:"constraint" yaml:"constraint"`
+	Notes      string `json:"notes" yaml:"notes"`
+	Error      string `json:"error,omitempty" yaml:"error,omitempty"`
+}
 
 func runCheck(ctx *clix.Context) error {
 	cwd, err := os.Getwd()
@@ -42,12 +57,8 @@ func runCheck(ctx *clix.Context) error {
 		return fmt.Errorf("no lockfile found, run 'cpkg tidy' first: %w", err)
 	}
 
-	// Print header
-	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n", "MODULE", "CURRENT", "LATEST", "CONSTRAINT", "NOTES")
-	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n",
-		"──────────────────────────────────────────────────",
-		"───────────────", "───────────────", "───────────────", "─────")
-
+	outputFormat := GetFormat()
+	deps := make([]checkDependency, 0, len(m.Dependencies))
 	hasUpdates := false
 
 	for modulePath, dep := range m.Dependencies {
@@ -62,16 +73,26 @@ func runCheck(ctx *clix.Context) error {
 		// Parse module path to extract repo URL and subpath
 		mp, err := modulepath.ParseModulePath(modulePath)
 		if err != nil {
-			fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n",
-				modulePath, currentVersion, "ERROR", constraint, fmt.Sprintf("invalid module path: %v", err))
+			deps = append(deps, checkDependency{
+				Module:     modulePath,
+				Current:    currentVersion,
+				Latest:     "ERROR",
+				Constraint: constraint,
+				Error:      fmt.Sprintf("invalid module path: %v", err),
+			})
 			continue
 		}
 
 		repoURL := git.ModulePathToRepoURL(mp.RepoURL)
 		allTags, err := git.LsRemoteTags(repoURL)
 		if err != nil {
-			fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n",
-				modulePath, currentVersion, "ERROR", constraint, fmt.Sprintf("failed to fetch tags: %v", err))
+			deps = append(deps, checkDependency{
+				Module:     modulePath,
+				Current:    currentVersion,
+				Latest:     "ERROR",
+				Constraint: constraint,
+				Error:      fmt.Sprintf("failed to fetch tags: %v", err),
+			})
 			continue
 		}
 
@@ -120,8 +141,38 @@ func runCheck(ctx *clix.Context) error {
 			notes = "up to date"
 		}
 
-		fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n",
-			modulePath, currentVersion, latestCompatible, constraint, notes)
+		deps = append(deps, checkDependency{
+			Module:     modulePath,
+			Current:    currentVersion,
+			Latest:     latestCompatible,
+			Constraint: constraint,
+			Notes:      notes,
+		})
+	}
+
+	// Output in requested format
+	if outputFormat != format.FormatText {
+		output := checkOutput{
+			Dependencies: deps,
+			AllUpToDate:  !hasUpdates,
+		}
+		return format.Write(ctx.App.Out, outputFormat, output)
+	}
+
+	// Text output
+	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n", "MODULE", "CURRENT", "LATEST", "CONSTRAINT", "NOTES")
+	fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n",
+		"──────────────────────────────────────────────────",
+		"───────────────", "───────────────", "───────────────", "─────")
+
+	for _, dep := range deps {
+		if dep.Error != "" {
+			fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n",
+				dep.Module, dep.Current, dep.Latest, dep.Constraint, dep.Error)
+		} else {
+			fmt.Fprintf(ctx.App.Out, "%-50s %-15s %-15s %-15s %s\n",
+				dep.Module, dep.Current, dep.Latest, dep.Constraint, dep.Notes)
+		}
 	}
 
 	if !hasUpdates {

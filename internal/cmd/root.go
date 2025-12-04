@@ -4,6 +4,7 @@ import (
 	"github.com/SCKelemen/clix"
 	"github.com/SCKelemen/clix/ext/help"
 	"github.com/SCKelemen/clix/ext/version"
+	"github.com/SCKelemen/cpkg/internal/format"
 )
 
 // Version is set at build time via ldflags.
@@ -17,6 +18,9 @@ var Commit = ""
 // Date is set at build time via ldflags.
 // Example: go build -ldflags "-X github.com/SCKelemen/cpkg/internal/cmd.Date=$(date -u +%Y-%m-%d)"
 var Date = ""
+
+// GlobalFormatFlag holds the global --format flag value
+var GlobalFormatFlag string
 
 func NewApp() *clix.App {
 	app := clix.NewApp("cpkg",
@@ -39,6 +43,16 @@ func NewApp() *clix.App {
 		graphCmd,
 	)
 
+	// Add global flags to root
+	app.Root.Flags = clix.NewFlagSet("cpkg")
+	app.Root.Flags.StringVar(clix.StringVarOptions{
+		FlagOptions: clix.FlagOptions{
+			Name:  "format",
+			Usage: "Output format: text, json, or yaml (default: text)",
+		},
+		Value: &GlobalFormatFlag,
+	})
+
 	// Add help extension for "cpkg help [command]"
 	app.AddExtension(help.Extension{})
 
@@ -50,4 +64,9 @@ func NewApp() *clix.App {
 	})
 
 	return app
+}
+
+// GetFormat returns the format from the global flag or default
+func GetFormat() format.Format {
+	return format.GetFormatFromContext(GlobalFormatFlag)
 }

@@ -6,9 +6,20 @@ import (
 	"path/filepath"
 
 	"github.com/SCKelemen/clix"
+	"github.com/SCKelemen/cpkg/internal/format"
 	"github.com/SCKelemen/cpkg/internal/lockfile"
 	"github.com/SCKelemen/cpkg/internal/manifest"
 )
+
+type graphOutput struct {
+	Module      string            `json:"module" yaml:"module"`
+	Dependencies []graphDependency `json:"dependencies" yaml:"dependencies"`
+}
+
+type graphDependency struct {
+	Module  string `json:"module" yaml:"module"`
+	Version string `json:"version" yaml:"version"`
+}
 
 var graphCmd = clix.NewCommand("graph",
 	clix.WithCommandShort("Display the dependency graph"),
@@ -34,8 +45,7 @@ func runGraph(ctx *clix.Context) error {
 		return fmt.Errorf("no lockfile found, run 'cpkg tidy' first: %w", err)
 	}
 
-	// Print dependency tree
-	fmt.Fprintf(ctx.App.Out, "%s\n", lock.Module)
+	outputFormat := GetFormat()
 
 	// Get sorted list of dependencies
 	deps := make([]string, 0, len(lock.Dependencies))
@@ -52,14 +62,32 @@ func runGraph(ctx *clix.Context) error {
 		}
 	}
 
-	// Print dependencies
-	for i, module := range deps {
+	graphDeps := make([]graphDependency, 0, len(deps))
+	for _, module := range deps {
 		dep := lock.Dependencies[module]
+		graphDeps = append(graphDeps, graphDependency{
+			Module:  module,
+			Version: dep.Version,
+		})
+	}
+
+	// Output in requested format
+	if outputFormat != format.FormatText {
+		output := graphOutput{
+			Module:       lock.Module,
+			Dependencies: graphDeps,
+		}
+		return format.Write(ctx.App.Out, outputFormat, output)
+	}
+
+	// Text output
+	fmt.Fprintf(ctx.App.Out, "%s\n", lock.Module)
+	for i, dep := range graphDeps {
 		prefix := "├─"
-		if i == len(deps)-1 {
+		if i == len(graphDeps)-1 {
 			prefix = "└─"
 		}
-		fmt.Fprintf(ctx.App.Out, "%s %s %s\n", prefix, module, dep.Version)
+		fmt.Fprintf(ctx.App.Out, "%s %s %s\n", prefix, dep.Module, dep.Version)
 	}
 
 	return nil
