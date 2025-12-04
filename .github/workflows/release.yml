@@ -101,10 +101,12 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           NOTES_FILE="docs/releases/${VERSION}.md"
+          echo "Looking for release notes at: $NOTES_FILE"
           if [ -f "$NOTES_FILE" ]; then
             # Copy release notes file
             cp "$NOTES_FILE" release_notes.txt
             echo "Found release notes file: $NOTES_FILE"
+            echo "Release notes size: $(wc -l < release_notes.txt) lines"
           else
             # Fallback: create basic release notes
             echo "No release notes file found for v${VERSION}, using auto-generated notes"
@@ -112,6 +114,9 @@ jobs:
             echo "" >> release_notes.txt
             echo "See [Full Changelog](https://github.com/${{ github.repository }}/compare/v1.0.0...v${VERSION}) for details." >> release_notes.txt
           fi
+          # Show first few lines for debugging
+          echo "Release notes preview:"
+          head -10 release_notes.txt || true
       
       - name: Download all artifacts
         uses: actions/download-artifact@v4
