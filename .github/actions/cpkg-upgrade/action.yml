@@ -41,15 +41,15 @@ runs:
       run: |
         go install github.com/SCKelemen/cpkg@latest
 
-    - name: Check for outdated dependencies
+    - name: Check for available updates
       id: check
       shell: bash
       run: |
-        # Run cpkg outdated and capture output
-        OUTPUT=$(cpkg outdated 2>&1 || true)
+        # Run cpkg check and capture output
+        OUTPUT=$(cpkg check 2>&1 || true)
         
         # Check if there are any dependencies that can be upgraded
-        # The outdated command prints "available" for dependencies with updates
+        # The check command prints "available" for dependencies with updates
         # and "All dependencies are up to date." when there are none
         if echo "$OUTPUT" | grep -qE "(major|minor|patch) available"; then
           echo "has_updates=true" >> $GITHUB_OUTPUT
