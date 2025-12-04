@@ -57,23 +57,6 @@ jobs:
           DATE=$(date -u +%Y-%m-%d)
           echo "date=$DATE" >> $GITHUB_OUTPUT
       
-      - name: Get release notes
-        id: release_notes
-        shell: bash
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          NOTES_FILE="RELEASE_NOTES_v${VERSION}.md"
-          if [ -f "$NOTES_FILE" ]; then
-            # Read the file and escape for GitHub Actions
-            cat "$NOTES_FILE" > release_notes.txt
-            echo "Found release notes file: $NOTES_FILE"
-          else
-            echo "No release notes file found for v${VERSION}, using auto-generated notes"
-            echo "# cpkg v${VERSION}" > release_notes.txt
-            echo "" >> release_notes.txt
-            echo "See [Full Changelog](https://github.com/${{ github.repository }}/compare/v1.0.0...v${VERSION}) for details." >> release_notes.txt
-          fi
-      
       - name: Build
         shell: bash
         run: |
@@ -93,6 +76,32 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: version
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      
+      - name: Get release notes
+        id: release_notes
+        shell: bash
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          NOTES_FILE="RELEASE_NOTES_v${VERSION}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            # Copy release notes file
+            cp "$NOTES_FILE" release_notes.txt
+            echo "Found release notes file: $NOTES_FILE"
+          else
+            # Fallback: create basic release notes
+            echo "No release notes file found for v${VERSION}, using auto-generated notes"
+            echo "# cpkg v${VERSION}" > release_notes.txt
+            echo "" >> release_notes.txt
+            echo "See [Full Changelog](https://github.com/${{ github.repository }}/compare/v1.0.0...v${VERSION}) for details." >> release_notes.txt
+          fi
       
       - name: Download all artifacts
         uses: actions/download-artifact@v4
