@@ -200,7 +200,7 @@ cpkg graph
 If you prefer to manually update dependencies:
 
 ```bash
-# 1. Check what's outdated
+# 1. Check for available updates
 cpkg check
 
 # 2. Update the version constraint in cpkg.yaml (optional)

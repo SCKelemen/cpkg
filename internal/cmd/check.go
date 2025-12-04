@@ -16,7 +16,7 @@ import (
 var checkCmd = clix.NewCommand("check",
 	clix.WithCommandShort("Check for newer versions of dependencies"),
 	clix.WithCommandRun(func(ctx *clix.Context) error {
-		return runOutdated(ctx)
+		return runCheck(ctx)
 	}),
 )
 
